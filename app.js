@@ -49,7 +49,7 @@ app.post("/user/login", async function(req, res) {
     const [rows, fields] = await req.conn.execute("SELECT id, password FROM Users WHERE username = ?;", [username]);
 
     if (!rows[0])
-        return res.send("Couldn't find that user");
+        return next("Couldn't find that user");
 
     const passwordHashed = rows[0].password;
 
@@ -67,20 +67,20 @@ app.post("/user/login", async function(req, res) {
 
         res.send(token);
     } else {
-        res.send("Incorrect password")
+        next("Incorrect password")
     }
 });
 
 // The user now needs to supply a token to move on
 app.use(async function(req, res, next) {
     if (req.body.token === undefined)
-        res.send("Please supply a token");
+        return next("Please supply a token");
     
     const [rows, fields] = await req.conn.execute("SELECT token FROM Tokens WHERE token = ?;", [req.body.token]);
 
     // Deny the user access if they have an invalid token
     if (!rows[0])
-        return res.send("Invalid token supplied");
+        return next("Invalid token supplied");
     
     next(null);
 });
