@@ -14,8 +14,9 @@ const app = express();
 const databaseDetails = {
     host: "localhost",
     user: "root",
-    password: "root",
-    database: "basedlogin"
+    password: "1234",
+    database: "basedlogin",
+    port: 3307
 };
 
 // To populate req.body
@@ -70,18 +71,17 @@ app.post("/user/login", async function(req, res) {
     }
 });
 
-// 114536bae831f127a860d9279f32bcc1
 // The user now needs to supply a token to move on
 app.use(async function(req, res, next) {
     if (req.body.token === undefined)
-        return res.send("Please supply a token");
+        res.send("Please supply a token");
     
-    const [rows, fields] = await req.conn.execute("SELECT token FROM Tokens;");
+    const [rows, fields] = await req.conn.execute("SELECT token FROM Tokens WHERE token = ?;", [req.body.token]);
 
     // Deny the user access if they have an invalid token
     if (!rows[0])
         return res.send("Invalid token supplied");
-
+    
     next(null);
 });
 
@@ -89,6 +89,10 @@ app.use(async function(req, res, next) {
 app.get("/data/all", async function(req, res) {
     const [rows, fields] = await req.conn.execute("SELECT id, MAC, DomainName FROM TestData;");
     res.send(rows);
+});
+
+app.use(function(err, req, res, next) {
+    res.send(err);
 });
 
 app.listen(3000, () => console.log("App started"));
